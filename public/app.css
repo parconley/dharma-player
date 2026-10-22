@@ -405,3 +405,14 @@ kbd { display: inline-block; min-width: 26px; text-align: center; padding: 3px 7
 .mini-speed-row { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .mini-speed-row button { width: 26px; height: 26px; font-size: 16px; }
 .mini-speed { font-weight: 700; font-size: 13px; min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* ---------- pins ---------- */
+.card-pin { position: absolute; left: 8px; top: 8px; width: 34px; height: 34px; border-radius: 50%; background: rgba(14,13,11,.78); color: var(--text); display: grid; place-items: center; opacity: 0; transition: opacity .2s, transform .15s; }
+.card:hover .card-pin, .card-pin.on { opacity: 1; }
+.card-pin.on { color: var(--accent); }
+.card-pin:hover { transform: scale(1.08); }
+.card-pin svg { width: 17px; height: 17px; }
+.outline-btn { display: inline-flex; align-items: center; gap: 6px; }
+.outline-btn svg { width: 16px; height: 16px; }
+.following a { cursor: pointer; }
+.following a.dragging { opacity: .35; }

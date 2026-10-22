@@ -122,11 +122,18 @@ function avatar(tid, cls = '') {
   const img = t?.photo ? `<img src="https://media.dharmaseed.org/uploads/photos/teacher_${tid}_125_0.png" alt="" loading="lazy" onerror="this.remove()">` : '';
   return `<div class="avatar ${cls}" style="--h:${hue(tid)}">${esc(initials(t?.name))}${img}</div>`;
 }
+const isPinned = id => lib.pins.includes(+id);
+function pinButton(tid, style = '') {
+  const on = isPinned(tid);
+  return `<button class="outline-btn${on ? ' on' : ''}" data-action="follow" data-teacher="${tid}"${style ? ` style="${style}"` : ''} title="${on ? 'Unpin' : 'Pin to sidebar'}">${icon(on ? 'pin-fill' : 'pin')}<span>${on ? 'Pinned' : 'Pin'}</span></button>`;
+}
 const retreatArt = r => `<div class="retreat-art" style="--h:${hue(r.id * 7)}"><span>${esc(r.name)}</span></div>`;
 
 function teacherCard(t) {
+  const pinned = isPinned(t.id);
   return `<div class="card" data-href="#/teacher/${t.id}">
-    <div class="art-wrap">${avatar(t.id)}<button class="card-play" data-action="play-teacher" data-teacher="${t.id}" title="Play latest">${icon('play')}</button></div>
+    <div class="art-wrap">${avatar(t.id)}<button class="card-play" data-action="play-teacher" data-teacher="${t.id}" title="Play latest">${icon('play')}</button>
+      <button class="card-pin${pinned ? ' on' : ''}" data-action="follow" data-teacher="${t.id}" title="${pinned ? 'Unpin' : 'Pin to sidebar'}">${icon(pinned ? 'pin-fill' : 'pin')}</button></div>
     <div class="card-title">${esc(t.name)}</div>
     <div class="card-sub">${plural(t.talks.length, 'talk')}</div>
   </div>`;
@@ -256,20 +263,21 @@ function setView(html, cls = '') {
 
 function homeView() {
   const inProgress = lib.history.map(h => h.id).filter(id => { const p = progressOf(id); return p && !p.done && p.pos > 15; });
-  const follows = Object.keys(lib.follows).map(Number).map(id => DB.teachers.get(id)).filter(Boolean);
+  const follows = lib.pins.map(id => DB.teachers.get(id)).filter(Boolean);
   const popular = [...DB.teachers.values()].sort((a, b) => b.talks.length - a.talks.length);
+  // Pinned teachers own the top of the page; fall back to popular teachers until something is pinned.
   const quick = [
-    ...inProgress.slice(0, 4).map(id => ({ talk: DB.talks.get(id) })),
     ...follows.map(t => ({ teacher: t })),
-    ...popular.slice(0, 8).map(t => ({ teacher: t })),
+    ...inProgress.slice(0, 4).map(id => ({ talk: DB.talks.get(id) })),
+    ...(follows.length ? [] : popular.slice(0, 8).map(t => ({ teacher: t }))),
   ].filter((q, i, a) => a.findIndex(o => (o.teacher?.id ?? -o.talk.id) === (q.teacher?.id ?? -q.talk.id)) === i).slice(0, 8);
 
   const quickHTML = quick.map(q => q.talk
     ? `<div class="quick-item" data-href="#/talk/${q.talk.id}" data-id="${q.talk.id}">${avatar(q.talk.teacher, 'sq')}<span>${esc(q.talk.title)}</span><button class="mini-play" data-action="play-talk" title="Resume">${icon('play')}</button></div>`
     : `<div class="quick-item" data-href="#/teacher/${q.teacher.id}">${avatar(q.teacher.id, 'sq')}<span>${esc(q.teacher.name)}</span><button class="mini-play" data-action="play-teacher" data-teacher="${q.teacher.id}" title="Play latest">${icon('play')}</button></div>`).join('');
 
-  const followedNew = follows.length
-    ? DB.sorted.filter(t => lib.follows[t.teacher]).slice(0, 8).map(t => t.id) : [];
+  const pinnedRows = follows.slice(0, 8).map(t => section(`Latest from ${t.name}`,
+    `<div class="cards one-row">${t.talks.slice(0, 12).map(talkCard).join('')}</div>`, `#/teacher/${t.id}`)).join('');
   const recentRetreats = [...DB.retreats.values()].filter(r => r.talks.length > 2).sort((a, b) => b.latest - a.latest).slice(0, 12);
   const now = new Date();
 
@@ -277,15 +285,14 @@ function homeView() {
     <div class="home-hero">
       <div class="hero-kicker faint">${now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
       <h1>Listen</h1>
-      <p>${DB.talks.size.toLocaleString()} talks from ${[...DB.teachers.values()].filter(t => t.talks.length).length.toLocaleString()} teachers, via Dharma Seed.</p>
+      <p>${follows.length ? 'Your teachers' : 'Pin your favorite teachers and they\'ll live up here.'}</p>
       <div class="quick">${quickHTML}</div>
     </div>
     <div class="pad" style="padding:0 32px">
       ${inProgress.length ? section('Continue listening', `<div class="cards one-row">${inProgress.slice(0, 12).map(id => talkCard(DB.talks.get(id))).join('')}</div>`, '#/history') : ''}
-      ${followedNew.length ? section('New from teachers you follow', talkList(followedNew)) : ''}
-      ${section('Just added', talkList(DB.sorted.slice(0, 8).map(t => t.id)), '#/new')}
+      ${pinnedRows}
       ${section('Recent retreats', `<div class="cards one-row">${recentRetreats.map(retreatCard).join('')}</div>`, '#/retreats')}
-      ${section('Most recorded teachers', `<div class="cards one-row">${popular.slice(0, 14).map(teacherCard).join('')}</div>`, '#/teachers')}
+      ${section(follows.length ? 'Discover more teachers' : 'Most recorded teachers', `<div class="cards one-row">${popular.filter(t => !isPinned(t.id)).slice(0, 14).map(teacherCard).join('')}</div>`, '#/teachers')}
     </div>`, 'flush');
 }
 
@@ -443,7 +450,6 @@ function teacherView([, id], params) {
   const tab = params.get('tab') || 'talks';
   const years = t.talks.length ? [year(t.talks[t.talks.length - 1].date), year(t.talks[0].date)] : [];
   const retreats = [...new Set(t.talks.map(x => x.retreat))].map(rid => DB.retreats.get(rid)).filter(Boolean).sort((a, b) => b.latest - a.latest);
-  const following = !!lib.follows[t.id];
   setView(`
     <div class="hero" style="--h:${hue(t.id)}">
       ${avatar(t.id)}
@@ -457,7 +463,7 @@ function teacherView([, id], params) {
     <div class="actionbar">
       <button class="big-play" data-action="play-teacher" data-teacher="${t.id}" title="Play newest">${icon('play')}</button>
       <button class="icon-btn" data-action="shuffle-teacher" data-teacher="${t.id}" title="Shuffle">${icon('shuffle')}</button>
-      <button class="outline-btn${following ? ' on' : ''}" data-action="follow" data-teacher="${t.id}">${following ? 'Following' : 'Follow'}</button>
+      ${pinButton(t.id)}
       ${t.website ? `<a class="icon-btn" href="${esc(t.website)}" target="_blank" rel="noopener" title="Website">${icon('external')}</a>` : ''}
     </div>
     <div class="pad">
@@ -561,7 +567,7 @@ function talkView([, id]) {
           <h4><a class="link" href="#/teacher/${t.id}">${esc(t.name)}</a></h4>
           <div class="muted" style="font-size:13px">${plural(t.talks.length, 'talk')}</div>
           ${t.bio ? `<div class="prose clamp" style="margin-top:10px">${esc(t.bio)}</div>` : ''}
-          <button class="outline-btn${lib.follows[t.id] ? ' on' : ''}" data-action="follow" data-teacher="${t.id}" style="margin-top:14px">${lib.follows[t.id] ? 'Following' : 'Follow'}</button>
+          ${pinButton(t.id, 'margin-top:14px')}
           <dl class="kv">
             <dt>Recorded</dt><dd>${fmtDate(talk.date)}</dd>
             ${v ? `<dt>Venue</dt><dd>${esc(v.name)}</dd>` : ''}
@@ -636,10 +642,38 @@ function rerender() {
 }
 
 function renderFollowing() {
-  const ts = Object.keys(lib.follows).map(Number).map(id => DB.teachers.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+  const ts = lib.pins.map(id => DB.teachers.get(id)).filter(Boolean);
   $('#following').innerHTML = ts.length
-    ? ts.map(t => `<a href="#/teacher/${t.id}" title="${esc(t.name)}">${avatar(t.id)}<span>${esc(t.name)}</span></a>`).join('')
-    : '<div class="empty label">Follow teachers to pin them here.</div>';
+    ? ts.map(t => `<a href="#/teacher/${t.id}" data-pin="${t.id}" draggable="true" title="${esc(t.name)} — drag to reorder">${avatar(t.id)}<span>${esc(t.name)}</span></a>`).join('')
+    : '<div class="empty label">Pin teachers to keep them here.</div>';
+}
+
+// Drag pinned teachers in the sidebar to reorder them.
+function initPinDrag() {
+  const box = $('#following');
+  let dragging = null;
+  box.addEventListener('dragstart', e => {
+    dragging = e.target.closest('[data-pin]');
+    if (!dragging) return;
+    dragging.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  });
+  box.addEventListener('dragover', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    const over = e.target.closest('[data-pin]');
+    if (!over || over === dragging) return;
+    const r = over.getBoundingClientRect();
+    over[e.clientY > r.top + r.height / 2 ? 'after' : 'before'](dragging);
+  });
+  box.addEventListener('dragend', () => {
+    if (!dragging) return;
+    dragging.classList.remove('dragging');
+    dragging = null;
+    lib.pins = $$('[data-pin]', box).map(a => +a.dataset.pin);
+    save();
+  });
 }
 
 function renderCatalogInfo() {
@@ -1029,14 +1063,20 @@ function toggleLike(id) {
 }
 
 function toggleFollow(tid) {
-  if (lib.follows[tid]) delete lib.follows[tid];
-  else lib.follows[tid] = Date.now();
+  const on = !isPinned(tid);
+  lib.pins = on ? [...lib.pins, tid] : lib.pins.filter(id => id !== tid);
   save();
   renderFollowing();
   for (const b of $$(`[data-action="follow"][data-teacher="${tid}"]`)) {
-    b.classList.toggle('on', !!lib.follows[tid]);
-    b.textContent = lib.follows[tid] ? 'Following' : 'Follow';
+    if (b.classList.contains('card-pin')) {
+      b.classList.toggle('on', on);
+      b.title = on ? 'Unpin' : 'Pin to sidebar';
+      $('use', b).setAttribute('href', `#i-${on ? 'pin-fill' : 'pin'}`);
+    } else {
+      b.outerHTML = pinButton(tid, b.getAttribute('style') || '');
+    }
   }
+  toast(`${on ? 'Pinned' : 'Unpinned'} ${teacherName(tid)}`);
 }
 
 function enqueue(id) {
@@ -1272,11 +1312,13 @@ async function boot() {
   fill.style.width = '100%';
   [lib] = await Promise.all([getJSON('/api/library'), loadCatalog()]);
   lib = { likes: {}, follows: {}, progress: {}, history: [], queue: [], qi: -1, prefs: {}, ...lib };
+  lib.pins ||= Object.entries(lib.follows).sort((a, b) => a[1] - b[1]).map(([id]) => +id);
   dl = { done: lib.downloads || {}, active: {} };
   refreshDownloads();
   $('#boot').hidden = true;
   $('#app').hidden = false;
   renderFollowing();
+  initPinDrag();
   renderCatalogInfo();
   setInterval(renderCatalogInfo, 60000);
   initPlayer();

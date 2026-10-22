@@ -132,7 +132,7 @@ function maybeSync() {
 
 // ---------- library ----------
 
-const emptyLibrary = () => ({ likes: {}, follows: {}, progress: {}, history: [], queue: [], qi: -1, prefs: {}, downloads: {} });
+const emptyLibrary = () => ({ likes: {}, follows: {}, pins: [], progress: {}, history: [], queue: [], qi: -1, prefs: {}, downloads: {} });
 let library = emptyLibrary();
 try { library = { ...library, ...JSON.parse(fs.readFileSync(LIBRARY_FILE, 'utf8')) }; } catch { /* first run */ }
 

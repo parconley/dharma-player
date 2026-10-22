@@ -3,7 +3,7 @@
 A clean, Spotify-style desktop player for the [Dharma Seed](https://dharmaseed.org) archive of ~49,000 Buddhist dharma talks. It runs locally on your own machine.
 
 - Browse and search every talk, teacher, and retreat (instant, diacritic-insensitive search: `jhana` finds *Jhāna*)
-- Follow teachers, like talks, history, and a play queue
+- Pin teachers to the sidebar (drag to reorder), like talks, history, and a play queue
 - Resumes every talk where you left off
 - Variable speed 0.5×–3× from the keyboard, plus a sleep timer that fades out
 - Download talks or whole retreats for offline listening
