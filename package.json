@@ -1,0 +1,45 @@
+{
+  "name": "dharma-player",
+  "productName": "Dharma Player",
+  "version": "1.0.0",
+  "description": "A clean, Spotify-style local player for the Dharma Seed archive of dharma talks",
+  "author": "Parker Conley",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "node server.js",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.parkerconley.dharmaplayer",
+    "productName": "Dharma Player",
+    "files": [
+      "server.js",
+      "electron/**",
+      "public/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "public/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Dharma Player"
+    },
+    "portable": {
+      "artifactName": "Dharma Player Portable.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  }
+}

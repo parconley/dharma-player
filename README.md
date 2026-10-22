@@ -9,17 +9,26 @@ A clean, Spotify-style desktop player for the [Dharma Seed](https://dharmaseed.o
 - Download talks or whole retreats for offline listening
 - Always-on-top mini player, so it never gets lost behind other windows
 
-## Run it
+## Desktop app (Windows)
 
-Requires [Node.js](https://nodejs.org) 18+. There are no dependencies to install.
+```
+npm install
+npm run dist
+```
+
+This produces `dist/Dharma Player Setup 1.0.0.exe`, an installer that adds Start Menu and desktop shortcuts, and `dist/Dharma Player Portable.exe`, a single file you can run from anywhere. The app is an [Electron](https://www.electronjs.org) shell around the same local server and UI. Your library lives in `%APPDATA%\Dharma Player\data`.
+
+`npm start` runs the desktop app from source.
+
+## In a browser
+
+Requires [Node.js](https://nodejs.org) 18+:
 
 ```
 node server.js
 ```
 
-Then open http://localhost:4747. The first launch downloads the catalog from Dharma Seed (about a minute).
-
-**Windows:** double-click `Dharma Player.vbs`. It starts the server in the background and opens the player in its own app window (Chrome or Edge, no tabs).
+Then open http://localhost:4747. The first launch downloads the catalog from Dharma Seed (about a minute). On Windows, `Dharma Player.vbs` starts the server and opens it in a Chrome app window.
 
 ## Keyboard
 

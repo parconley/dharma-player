@@ -9,8 +9,8 @@ const zlib = require('zlib');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 
-const PORT = Number(process.env.PORT) || 4747;
-const DATA = path.join(__dirname, 'data');
+const PORT = Number(process.env.PORT ?? 4747);              // 0 = pick a free port (desktop app)
+const DATA = process.env.DHARMA_DATA || path.join(__dirname, 'data');
 const AUDIO = path.join(DATA, 'audio');
 const PUBLIC = path.join(__dirname, 'public');
 const CATALOG_FILE = path.join(DATA, 'catalog.json');
@@ -265,8 +265,21 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Dharma Player running at http://localhost:${PORT}`);
-  maybeSync();
-  setInterval(maybeSync, 3600e3);
+const ready = new Promise((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(PORT, '127.0.0.1', () => {
+    const { port } = server.address();
+    console.log(`Dharma Player running at http://localhost:${port}`);
+    maybeSync();
+    setInterval(maybeSync, 3600e3);
+    resolve(port);
+  });
 });
+
+// Used by the desktop app to persist the library before the process exits.
+function flushSync() {
+  clearTimeout(saveTimer);
+  fs.writeFileSync(LIBRARY_FILE, JSON.stringify(library));
+}
+
+module.exports = { ready, flushSync };
