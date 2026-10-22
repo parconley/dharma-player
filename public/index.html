@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dharma Player</title>
+  <meta name="theme-color" content="#0e0d0b">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div id="boot" class="boot">
+    <div class="boot-inner">
+      <div class="boot-mark"></div>
+      <div class="boot-title">Dharma Player</div>
+      <div class="boot-phase" id="boot-phase">Starting…</div>
+      <div class="boot-bar"><div id="boot-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="app" id="app" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="#/"><span class="brand-mark"></span><span class="label">Dharma Player</span></a>
+      <nav class="nav">
+        <a href="#/" data-nav="home"><svg><use href="#i-home"/></svg><span class="label">Home</span></a>
+        <a href="#/search" data-nav="search"><svg><use href="#i-search"/></svg><span class="label">Search</span></a>
+        <a href="#/teachers" data-nav="teachers"><svg><use href="#i-people"/></svg><span class="label">Teachers</span></a>
+        <a href="#/retreats" data-nav="retreats"><svg><use href="#i-mountain"/></svg><span class="label">Retreats</span></a>
+      </nav>
+      <div class="nav-heading label">Your library</div>
+      <nav class="nav">
+        <a href="#/liked" data-nav="liked"><svg><use href="#i-heart-fill"/></svg><span class="label">Liked talks</span></a>
+        <a href="#/downloads" data-nav="downloads"><svg><use href="#i-download"/></svg><span class="label">Downloads</span></a>
+        <a href="#/history" data-nav="history"><svg><use href="#i-clock"/></svg><span class="label">History</span></a>
+      </nav>
+      <div class="nav-heading label">Following</div>
+      <div class="following" id="following"></div>
+      <div class="sidebar-foot label" id="catalog-info"></div>
+    </aside>
+
+    <main class="main" id="main">
+      <div class="view" id="view"></div>
+    </main>
+
+    <aside class="queue-panel" id="queue-panel" hidden>
+      <div class="queue-head">
+        <h3>Queue</h3>
+        <button class="text-btn" data-action="clear-queue">Clear</button>
+        <button class="icon-btn" data-action="toggle-queue" title="Close"><svg><use href="#i-close"/></svg></button>
+      </div>
+      <div class="queue-body" id="queue-body"></div>
+    </aside>
+
+    <footer class="player" id="player">
+      <div class="np" id="np"></div>
+      <div class="controls">
+        <div class="buttons">
+          <button class="icon-btn" data-action="prev" title="Previous"><svg><use href="#i-prev"/></svg></button>
+          <button class="icon-btn skip" data-action="back" title="Back 15s (←)"><svg><use href="#i-back15"/></svg></button>
+          <button class="play-main" data-action="toggle" title="Play / pause (Space)"><svg id="play-icon"><use href="#i-play"/></svg></button>
+          <button class="icon-btn skip" data-action="fwd" title="Forward 30s (→)"><svg><use href="#i-fwd30"/></svg></button>
+          <button class="icon-btn" data-action="next" title="Next"><svg><use href="#i-next"/></svg></button>
+        </div>
+        <div class="scrub">
+          <span class="time" id="t-cur">0:00</span>
+          <div class="scrubber" id="scrubber">
+            <div class="track"><div class="buffered" id="sc-buf"></div><div class="played" id="sc-played"></div></div>
+            <div class="thumb" id="sc-thumb"></div>
+            <div class="hover-time" id="sc-hover" hidden></div>
+          </div>
+          <span class="time" id="t-dur">0:00</span>
+        </div>
+      </div>
+      <div class="extras">
+        <div class="menu-wrap">
+          <button class="speed-btn" data-action="speed-menu" id="speed-btn" title="Playback speed (+ / −, scroll to adjust)">1×</button>
+          <div class="menu speed-menu" id="speed-menu" hidden>
+            <div class="menu-title">Playback speed</div>
+            <div class="speed-big">
+              <button data-action="speed-step" data-d="-0.05" title="Slower">−</button>
+              <span id="speed-val">1×</span>
+              <button data-action="speed-step" data-d="0.05" title="Faster">+</button>
+            </div>
+            <input type="range" id="speed-range" min="0.5" max="3" step="0.05" value="1" class="range">
+            <div class="speed-presets">
+              <button data-action="speed-set" data-r="0.75">0.75</button>
+              <button data-action="speed-set" data-r="1">1</button>
+              <button data-action="speed-set" data-r="1.25">1.25</button>
+              <button data-action="speed-set" data-r="1.5">1.5</button>
+              <button data-action="speed-set" data-r="1.75">1.75</button>
+              <button data-action="speed-set" data-r="2">2</button>
+              <button data-action="speed-set" data-r="2.5">2.5</button>
+              <button data-action="speed-set" data-r="3">3</button>
+            </div>
+            <div class="menu-hint"><kbd>+</kbd><kbd>−</kbd> anywhere to nudge · <kbd>R</kbd> resets</div>
+          </div>
+        </div>
+        <div class="menu-wrap">
+          <button class="icon-btn" data-action="sleep-menu" id="sleep-btn" title="Sleep timer"><svg><use href="#i-moon"/></svg><span id="sleep-label"></span></button>
+          <div class="menu" id="sleep-menu" hidden>
+            <div class="menu-title">Sleep timer</div>
+            <button data-action="sleep" data-min="15">15 minutes</button>
+            <button data-action="sleep" data-min="30">30 minutes</button>
+            <button data-action="sleep" data-min="45">45 minutes</button>
+            <button data-action="sleep" data-min="60">1 hour</button>
+            <button data-action="sleep" data-min="end">End of talk</button>
+            <button data-action="sleep" data-min="off">Off</button>
+          </div>
+        </div>
+        <button class="icon-btn" data-action="toggle-queue" id="queue-btn" title="Queue"><svg><use href="#i-queue"/></svg></button>
+        <button class="icon-btn" data-action="mini" id="mini-btn" title="Mini player — floats on top of other windows (I)"><svg><use href="#i-pip"/></svg></button>
+        <button class="icon-btn" data-action="shortcuts" title="Keyboard shortcuts (?)"><svg><use href="#i-keyboard"/></svg></button>
+        <div class="volume">
+          <button class="icon-btn" data-action="mute" title="Mute"><svg id="vol-icon"><use href="#i-vol"/></svg></button>
+          <input type="range" id="volume" min="0" max="100" value="100" class="range">
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <div class="osd" id="osd" hidden></div>
+
+  <div class="shortcuts" id="shortcuts" data-action="close-shortcuts" hidden>
+    <div class="sc-panel">
+      <div class="sc-head"><h3>Keyboard shortcuts</h3><button class="icon-btn sc-close" data-action="close-shortcuts" title="Close"><svg><use href="#i-close"/></svg></button></div>
+      <div class="sc-grid">
+        <span><kbd>Space</kbd><kbd>K</kbd></span><span>Play / pause</span>
+        <span><kbd>←</kbd><kbd>J</kbd></span><span>Back 15 seconds</span>
+        <span><kbd>→</kbd><kbd>L</kbd></span><span>Forward 30 seconds</span>
+        <span><kbd>+</kbd><kbd>−</kbd></span><span>Speed up / slow down by 0.1×</span>
+        <span><kbd>&gt;</kbd><kbd>&lt;</kbd></span><span>Speed up / slow down by 0.25×</span>
+        <span><kbd>R</kbd></span><span>Reset speed to 1×</span>
+        <span><kbd>↑</kbd><kbd>↓</kbd></span><span>Volume</span>
+        <span><kbd>M</kbd></span><span>Mute</span>
+        <span><kbd>0</kbd>–<kbd>9</kbd></span><span>Jump to 0%–90% of the talk</span>
+        <span><kbd>N</kbd><kbd>P</kbd></span><span>Next / previous talk</span>
+        <span><kbd>I</kbd></span><span>Mini player, floats on top of other windows</span>
+        <span><kbd>/</kbd></span><span>Search</span>
+        <span><kbd>?</kbd></span><span>Show this list</span>
+      </div>
+    </div>
+  </div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M18 14.8c1.9.7 3.1 2.4 3.5 5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-mountain" viewBox="0 0 24 24"><path d="m2.5 19.5 6.5-11 4 6.5 2.5-3.5 6 8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="17" cy="6" r="1.8" fill="currentColor"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-heart-fill" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-downloaded" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/><path d="M12 7v7m0 0-3-3m3 3 3-3M8 16.5h8" fill="none" stroke="#0e0d0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L9.2 4.8A.8.8 0 0 0 8 5.5z" fill="currentColor"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor"/></symbol>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6v12a.7.7 0 0 1-1.1.6L9 12.6a.7.7 0 0 1 0-1.2l8.9-6A.7.7 0 0 1 19 6z" fill="currentColor"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M18 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 6v12a.7.7 0 0 0 1.1.6l8.9-6a.7.7 0 0 0 0-1.2l-8.9-6A.7.7 0 0 0 5 6z" fill="currentColor"/></symbol>
+      <symbol id="i-back15" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 4.5V9H9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><text x="12.2" y="15.4" font-size="7.2" font-weight="700" text-anchor="middle" fill="currentColor" font-family="Inter,sans-serif">15</text></symbol>
+      <symbol id="i-fwd30" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3L19.5 9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 4.5V9H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><text x="11.8" y="15.4" font-size="7.2" font-weight="700" text-anchor="middle" fill="currentColor" font-family="Inter,sans-serif">30</text></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 14v6l5-3z" fill="currentColor"/></symbol>
+      <symbol id="i-add-queue" viewBox="0 0 24 24"><path d="M4 6h11M4 11h11M4 16h7M17 13v7M13.5 16.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="m16 9.5 5 5m0-5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3.5 7h3c4.5 0 6.5 10 11 10h3M3.5 17h3c1.7 0 3-1.4 4-3.2M13.5 10.2c1-1.8 2.3-3.2 4-3.2h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m18 4.5 2.5 2.5-2.5 2.5M18 14.5l2.5 2.5-2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1H10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3L19.5 9M19.5 4.5V9H15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-pip" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="12" y="11" width="6.5" height="5.5" rx="1" fill="currentColor"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 10h.5M10 10h.5M13.5 10h.5M17 10h.5M8 14h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4.5h4V7M6.5 7l1 12.5h9l1-12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    </defs>
+  </svg>
+
+  <script src="/app.js"></script>
+</body>
+</html>
